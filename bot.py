@@ -11,7 +11,7 @@ def get_dad_joke():
     else:
         return "No dad joke today. Blame the API."
 
-def send_email(subject, body, to_email):
+def send_email(subject, body, to_emails):
     email = os.getenv("EMAIL_ADDRESS")
     password = os.getenv("EMAIL_PASSWORD")
 
@@ -19,13 +19,15 @@ def send_email(subject, body, to_email):
     msg.set_content(body)
     msg["Subject"] = subject
     msg["From"] = email
-    msg["To"] = to_email
+    msg["To"] = ", ".join(to_emails)  # Multiple recipients
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
         smtp.login(email, password)
         smtp.send_message(msg)
-        print("Email sent!")
+        print(f"Email sent to {len(to_emails)} recipient(s)!")
+
 
 if __name__ == "__main__":
     joke = get_dad_joke()
-    send_email("Your Daily Dad Joke 🤪", joke, os.getenv("TO_EMAIL"))
+    recipients = os.getenv("TO_EMAILS").split(",")
+    send_email("Your Daily Dad Joke 🤪", joke, recipients)
