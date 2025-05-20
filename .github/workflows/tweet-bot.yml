@@ -1,31 +1,24 @@
-name: Dad Joke Twitter Bot
+name: Dad Joke Email Bot
 
 on:
   schedule:
-    # Run every hour (you can change the cron if you want)
-    - cron: '15 17 * * *'
-  workflow_dispatch:  # allows manual trigger from GitHub UI
+    - cron: '0 * * * *'  # 12:15 PM CT = 17:15 UTC
+  workflow_dispatch:
 
 jobs:
-  tweet:
+  send-joke:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-
-    - name: Install dependencies
-      run: pip install tweepy requests
-
-    - name: Run bot
-      run: python bot.py
-      env:
-        API_KEY: ${{ secrets.API_KEY }}
-        API_SECRET: ${{ secrets.API_SECRET }}
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        ACCESS_SECRET: ${{ secrets.ACCESS_SECRET }}
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Run bot
+        env:
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        run: python bot.py
