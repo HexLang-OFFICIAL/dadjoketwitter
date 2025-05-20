@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dad Joke Newsletter Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; }
+    ul { padding-left: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Dad Joke Newsletter Dashboard</h1>
+
+  <h3>Recipients</h3>
+  <ul id="recipient-list"></ul>
+
+  <h3>Add Recipient</h3>
+  <input type="text" id="name" placeholder="Name" />
+  <input type="email" id="email" placeholder="Email" />
+  <button onclick="addRecipient()">Add Recipient</button>
+
+  <h3>Actions</h3>
+  <button onclick="sendNewsletter()">Send Newsletter Now</button>
+
+  <p id="status"></p>
+
+  <script>
+    const owner = 'HexLang-OFFICIAL';
+    const repo = 'dadjoketwitter';
+    const branch = 'main'; // or your default branch
+    const filePath = 'recipients.json';
+
+    // You'll need a GitHub PAT with repo access here:
+    const token = prompt("Enter your GitHub Personal Access Token");
+
+    // Fetch recipients.json from GitHub
+    async function fetchRecipients() {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`, {
+        headers: { Authorization: `token ${token}` }
+      });
+      if (!res.ok) {
+        document.getElementById('status').textContent = 'Failed to load recipients.json';
+        return;
+      }
+      const data = await res.json();
+      const content = atob(data.content);
+      window.recipients = JSON.parse(content);
+      window.sha = data.sha; // Needed for updating the file
+      displayRecipients();
+    }
+
+    // Show recipients in the list
+    function displayRecipients() {
+      const ul = document.getElementById('recipient-list');
+      ul.innerHTML = '';
+      window.recipients.forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = `${r.name} <${r.email}>`;
+        ul.appendChild(li);
+      });
+    }
+
+    // Add a recipient and update the JSON on GitHub
+    async function addRecipient() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      if (!name || !email) {
+        alert('Please fill in both name and email.');
+        return;
+      }
+      window.recipients.push({ name, email });
+
+      const updatedContent = btoa(JSON.stringify(window.recipients, null, 2));
+
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Add recipient ${name} <${email}>`,
+          content: updatedContent,
+          sha: window.sha,
+          branch: branch
+        })
+      });
+
+      if (res.ok) {
+        document.getElementById('status').textContent = 'Recipient added successfully!';
+        document.getElementById('name').value = '';
+        document.getElementById('email').value = '';
+        fetchRecipients();
+      } else {
+        document.getElementById('status').textContent = 'Failed to add recipient.';
+      }
+    }
+
+    // Trigger GitHub Actions workflow_dispatch event
+    async function sendNewsletter() {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/email-bot.yml/dispatches`, {
+        method: 'POST',
+        headers: {
+          Authorization: `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ref: branch
+        })
+      });
+
+      if (res.status === 204) {
+        document.getElementById('status').textContent = 'Newsletter send triggered!';
+      } else {
+        document.getElementById('status').textContent = 'Failed to trigger newsletter send.';
+      }
+    }
+
+    // Init
+    fetchRecipients();
+  </script>
+</body>
+</html>
