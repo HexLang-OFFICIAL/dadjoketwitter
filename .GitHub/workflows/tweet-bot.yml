@@ -3,7 +3,7 @@ name: Dad Joke Twitter Bot
 on:
   schedule:
     # Run every hour (you can change the cron if you want)
-    - cron: '0 * * * *'
+    - cron: '15 17 * * *'
   workflow_dispatch:  # allows manual trigger from GitHub UI
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
         python-version: '3.x'
 
     - name: Install dependencies
-      run: pip install tweepy
+      run: pip install tweepy requests
 
     - name: Run bot
       run: python bot.py
