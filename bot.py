@@ -1,7 +1,7 @@
 import tweepy
 import time
-import random
-import os  # for environment variables
+import requests
+import os
 
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
@@ -11,21 +11,30 @@ ACCESS_SECRET = os.getenv("ACCESS_SECRET")
 auth = tweepy.OAuth1UserHandler(API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_SECRET)
 api = tweepy.API(auth)
 
-dad_jokes = [
-    "Why don't skeletons fight each other? They don't have the guts.",
-    "I'm reading a book about anti-gravity. It's impossible to put down!",
-    "Did you hear about the restaurant on the moon? Great food, no atmosphere.",
-    "Why did the scarecrow win an award? Because he was outstanding in his field!",
-    "I would tell you a construction joke, but I'm still working on it."
-]
+def get_dad_joke():
+    headers = {"Accept": "application/json"}
+    try:
+        response = requests.get("https://icanhazdadjoke.com/", headers=headers)
+        if response.status_code == 200:
+            joke = response.json().get("joke")
+            return joke
+        else:
+            print(f"Failed to get joke: Status code {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Exception during joke fetch: {e}")
+        return None
 
 def tweet_joke():
-    joke = random.choice(dad_jokes)
-    try:
-        api.update_status(joke)
-        print(f"Tweeted: {joke}")
-    except Exception as e:
-        print(f"Error: {e}")
+    joke = get_dad_joke()
+    if joke:
+        try:
+            api.update_status(joke)
+            print(f"Tweeted: {joke}")
+        except Exception as e:
+            print(f"Error tweeting: {e}")
+    else:
+        print("No joke fetched, skipping tweet.")
 
 if __name__ == "__main__":
-    tweet_joke()  # Only tweet once per workflow run
+    tweet_joke()
