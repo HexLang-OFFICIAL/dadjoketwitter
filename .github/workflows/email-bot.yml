@@ -1,24 +1,29 @@
-name: Dad Joke Email Bot
+name: Weekly Dad Joke Newsletter
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 12:15 PM CT = 17:15 UTC
+    # Runs at 12:15 PM CT every Monday
+    - cron: '0 14 * * 1'
   workflow_dispatch:
 
 jobs:
-  send-joke:
+  send-newsletter:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+
       - name: Install dependencies
         run: pip install requests
-      - name: Run bot
+
+      - name: Run dad joke newsletter bot
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          TO_EMAILS: ${{ secrets.TO_EMAILS }}
+          FROM_NAME: "Dad Joke Bot"
         run: python bot.py
