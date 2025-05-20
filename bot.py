@@ -1,40 +1,31 @@
-import tweepy
-import time
+import smtplib
 import requests
 import os
-
-API_KEY = os.getenv("API_KEY")
-API_SECRET = os.getenv("API_SECRET")
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
-ACCESS_SECRET = os.getenv("ACCESS_SECRET")
-
-auth = tweepy.OAuth1UserHandler(API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_SECRET)
-api = tweepy.API(auth)
+from email.message import EmailMessage
 
 def get_dad_joke():
     headers = {"Accept": "application/json"}
-    try:
-        response = requests.get("https://icanhazdadjoke.com/", headers=headers)
-        if response.status_code == 200:
-            joke = response.json().get("joke")
-            return joke
-        else:
-            print(f"Failed to get joke: Status code {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"Exception during joke fetch: {e}")
-        return None
-
-def tweet_joke():
-    joke = get_dad_joke()
-    if joke:
-        try:
-            api.update_status(joke)
-            print(f"Tweeted: {joke}")
-        except Exception as e:
-            print(f"Error tweeting: {e}")
+    res = requests.get("https://icanhazdadjoke.com/", headers=headers)
+    if res.status_code == 200:
+        return res.json()["joke"]
     else:
-        print("No joke fetched, skipping tweet.")
+        return "No dad joke today. Blame the API."
+
+def send_email(subject, body, to_email):
+    email = os.getenv("EMAIL_ADDRESS")
+    password = os.getenv("EMAIL_PASSWORD")
+
+    msg = EmailMessage()
+    msg.set_content(body)
+    msg["Subject"] = subject
+    msg["From"] = email
+    msg["To"] = to_email
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(email, password)
+        smtp.send_message(msg)
+        print("Email sent!")
 
 if __name__ == "__main__":
-    tweet_joke()
+    joke = get_dad_joke()
+    send_email("Your Daily Dad Joke 🤪", joke, os.getenv("TO_EMAIL"))
